@@ -19,7 +19,7 @@ package testutil
 //
 //   var body RequestBody
 //   var response ResponseBody
-//   t is *testing.T, from a unit test
+//   t is TestReporter, use *testing.T from a unit test
 //   e is *echo.Echo
 //   response := NewRequest().Post("/path").WithJsonBody(body).GoWithHTTPHandler(t, e)
 //   err := response.UnmarshalBodyToObject(&response)
@@ -31,8 +31,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"testing"
 )
+
+type TestReporter interface {
+	Errorf(format string, args ...any)
+}
 
 func NewRequest() *RequestBuilder {
 	return &RequestBuilder{
@@ -138,7 +141,7 @@ func (r *RequestBuilder) WithCookieNameValue(name, value string) *RequestBuilder
 
 // GoWithHTTPHandler performs the request, it takes a pointer to a testing context
 // to print messages, and a http handler for request handling.
-func (r *RequestBuilder) GoWithHTTPHandler(t *testing.T, handler http.Handler) *CompletedRequest {
+func (r *RequestBuilder) GoWithHTTPHandler(t TestReporter, handler http.Handler) *CompletedRequest {
 	if r.Error != nil {
 		// Fail the test if we had an error
 		t.Errorf("error constructing request: %s", r.Error)
