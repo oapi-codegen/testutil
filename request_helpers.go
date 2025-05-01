@@ -25,6 +25,7 @@ package testutil
 //   err := response.UnmarshalBodyToObject(&response)
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -51,6 +52,7 @@ type RequestBuilder struct {
 	Body    []byte
 	Error   error
 	Cookies []*http.Cookie
+	Context context.Context
 }
 
 // WithMethod sets the method and path
@@ -139,6 +141,11 @@ func (r *RequestBuilder) WithCookieNameValue(name, value string) *RequestBuilder
 	return r.WithCookie(&http.Cookie{Name: name, Value: value})
 }
 
+func (r *RequestBuilder) WithContext(ctx context.Context) *RequestBuilder {
+	r.Context = ctx
+	return r
+}
+
 // GoWithHTTPHandler performs the request, it takes a pointer to a testing context
 // to print messages, and a http handler for request handling.
 func (r *RequestBuilder) GoWithHTTPHandler(t TestReporter, handler http.Handler) *CompletedRequest {
@@ -162,7 +169,9 @@ func (r *RequestBuilder) GoWithHTTPHandler(t TestReporter, handler http.Handler)
 	for _, c := range r.Cookies {
 		req.AddCookie(c)
 	}
-
+	if r.Context != nil {
+		req = req.WithContext(r.Context)
+	}
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
